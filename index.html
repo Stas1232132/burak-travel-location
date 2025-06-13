@@ -1,0 +1,131 @@
+
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Burak Travel - Локації</title>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f9f9f9;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        form {
+            background: #fff;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #555;
+        }
+
+        select, input[type="text"], input[type="file"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .success-message {
+            margin-top: 15px;
+            color: green;
+            font-weight: bold;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>Burak Travel</h1>
+    <form id="locationForm">
+        <label for="location">Виберіть локацію:</label>
+        <select id="location" required>
+            <option value="">Оберіть локацію</option>
+            <option value="Київ">Київ</option>
+            <option value="Львів">Львів</option>
+            <option value="Одеса">Одеса</option>
+            <option value="Чернівці">Чернівці</option>
+        </select>
+
+        <label for="ttn">Номер ТТН:</label>
+        <input type="text" id="ttn" required />
+
+        <label for="photo">Завантажити фото ТТН:</label>
+        <input type="file" id="photo" accept="image/*" />
+
+        <button type="submit">Відправити</button>
+
+        <div class="success-message" id="successMessage">
+            ✅ Дякуємо, дані надіслано!
+        </div>
+    </form>
+
+    <script>
+        document.getElementById('locationForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const location = document.getElementById('location').value;
+            const ttn = document.getElementById('ttn').value;
+            const photoFile = document.getElementById('photo').files[0];
+
+            const formData = new FormData();
+            formData.append('location', location);
+            formData.append('ttn', ttn);
+            formData.append('photo', photoFile);
+
+            fetch('YOUR_GOOGLE_APPS_SCRIPT_URL', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (response.ok) {
+                    document.getElementById('successMessage').style.display = 'block';
+                    document.getElementById('locationForm').reset();
+                } else {
+                    alert('Помилка при відправці. Спробуйте ще раз.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Помилка при відправці. Спробуйте ще раз.');
+            });
+        });
+    </script>
+</body>
+</html>
