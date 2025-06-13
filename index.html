@@ -24,53 +24,80 @@
     <select id="location" required>
       <option value=""> </option>
       <option>Київ</option><option>Львів</option><option>Одеса</option>
-      <!-- додай інші локації… -->
     </select>
 
     <label for="ttn">Номер ТТН (необов’язково)</label>
     <input id="ttn" type="text" placeholder="Автозаповнюється з фото" />
 
     <label for="photo">Завантажити фото ТТН</label>
-    <input id="photo" type="file" accept="image/*" required />
+    <input id="photo" type="file" accept="image/*" required onchange="readTtn(this)">
 
     <button type="submit">Відправити</button>
     <div id="success">✅ Дані надіслано!</div>
   </form>
 
   <script>
-  /* ← ВСТАВ СЮДИ URL ТВОГО Apps Script-розгортання */
-  const GAS = 'https://script.google.com/macros/s/AKfycbx6ayFCYDsTwqSOwticl_gCycwqI1EnJumBTZ6vbFLP05Lc1zHCImi2aIVN4PRexRiVLA/exec';
+  const GAS = 'https://script.google.com/macros/s/AKfycbw3bZge824-Byc3BOdUlTA0x15nao8Sc1Crj_xHRxQW7aZcrG9t9Z3DcaVtuyLpjnk3jQ/exec'; // підстав свій!
+
+  async function readTtn(input){
+    if (!input.files[0]) return;
+
+    const ttnField = document.getElementById('ttn');
+    ttnField.placeholder = '⏳ Читання...';
+
+    const base64 = await new Promise(r=>{
+      const rdr = new FileReader();
+      rdr.onload = () => r(rdr.result);
+      rdr.readAsDataURL(input.files[0]);
+    });
+
+    const fd = new FormData();
+    fd.append('photo', base64);
+    fd.append('mode', 'ocr');
+
+    fetch(GAS, {method:'POST', body:fd})
+      .then(r=>r.ok?r.text():Promise.reject())
+      .then(ttn=>{
+        if (ttn.length >= 10) ttnField.value = ttn;
+        else {
+          ttnField.value = '';
+          alert('Не вдалося автоматично розпізнати номер. Введіть вручну.');
+        }
+        ttnField.placeholder = 'Автозаповнюється з фото';
+      })
+      .catch(()=>{
+        ttnField.placeholder = 'Автозаповнюється з фото';
+        alert('Помилка при зчитуванні фото.');
+      });
+  }
 
   document.getElementById('f').addEventListener('submit', async (e)=>{
     e.preventDefault();
 
-    const locSelect = document.getElementById('location');
-    const loc       = locSelect.value.trim();
-    const file      = document.getElementById('photo').files[0];
-    const userTtn   = document.getElementById('ttn').value.replace(/\D/g,'').slice(0,14);
+    const loc = document.getElementById('location').value.trim();
+    const file= document.getElementById('photo').files[0];
+    const userTtn = document.getElementById('ttn').value.replace(/\D/g,'').slice(0,14);
 
     if(!loc || !file){ alert('Оберіть локацію та фото'); return; }
 
-    /* 1. Читаємо файл у Base64 */
     const base64 = await new Promise(r=>{
       const rdr = new FileReader();
-      rdr.onload = () => r(rdr.result);           // data:image/…;base64,AAA
+      rdr.onload = () => r(rdr.result);
       rdr.readAsDataURL(file);
     });
 
-    /* 2. Готуємо форму та шлемо в Apps Script */
     const fd = new FormData();
     fd.append('location', loc);
-    fd.append('photo',    base64);
-    fd.append('ttn',      userTtn);
+    fd.append('photo', base64);
+    fd.append('ttn', userTtn);
 
     fetch(GAS,{method:'POST', body:fd})
-      .then(r => r.ok ? r.text() : Promise.reject())
+      .then(r=>r.ok?r.text():Promise.reject())
       .then(()=>{
         document.getElementById('success').style.display='block';
         e.target.reset();
       })
-      .catch(()=> alert('Не вдалося автоматично розпізнати номер. Введіть вручну.'));
+      .catch(()=> alert('Помилка при відправці.'));
   });
   </script>
 </body>
