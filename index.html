@@ -77,6 +77,14 @@
       color: #279a00;
       font-weight: 600;
     }
+
+    #loader {
+      display: none;
+      font-size: 13px;
+      color: #555;
+      margin-top: 4px;
+      text-align: left;
+    }
   </style>
 </head>
 
@@ -95,6 +103,7 @@
 
     <label for="ttn">Номер ТТН (необов’язково)</label>
     <input id="ttn" type="text" placeholder="Автозаповнюється з фото" />
+    <div id="loader">⏳ Читаю ТТН з фото...</div>
 
     <label for="photo">Завантажити фото ТТН</label>
     <input id="photo" type="file" accept="image/*" required onchange="readTtn(this)" />
@@ -104,13 +113,16 @@
   </form>
 
   <script>
-    const GAS = 'https://script.google.com/macros/s/AKfycbzrtFTAXEOBgEJHHT2Ya9SajEmhVVPlblDhgIRQSBhcA5cDqWeQSHcWWxQK93hWhV2ChQ/exec'; // Підстав свій URL
+    const GAS = 'https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap'; // Підстав свій URL
 
     async function readTtn(input) {
       if (!input.files[0]) return;
 
       const ttnField = document.getElementById('ttn');
-      ttnField.placeholder = '⏳ Читання...';
+      const loader = document.getElementById('loader');
+
+      ttnField.placeholder = ' ';
+      loader.style.display = 'block';
 
       const base64 = await new Promise(r => {
         const rdr = new FileReader();
@@ -130,11 +142,14 @@
             ttnField.value = '';
             alert('Не вдалося автоматично розпізнати номер. Введіть вручну.');
           }
-          ttnField.placeholder = 'Автозаповнюється з фото';
         })
         .catch(() => {
-          ttnField.placeholder = 'Автозаповнюється з фото';
+          ttnField.value = '';
           alert('Помилка при зчитуванні фото.');
+        })
+        .finally(() => {
+          loader.style.display = 'none';
+          ttnField.placeholder = 'Автозаповнюється з фото';
         });
     }
 
@@ -169,6 +184,3 @@
         })
         .catch(() => alert('Помилка при відправці.'));
     });
-  </script>
-</body>
-</html>
