@@ -2,20 +2,84 @@
 <html lang="uk">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
-  <title>Burak Travel – локації</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Burak Travel – Локації</title>
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
 
   <style>
-    body{display:flex;justify-content:center;align-items:center;min-height:100vh;margin:0;font-family:sans-serif;background:#f6f8fb}
-    form{background:#fff;padding:24px;border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,.08);width:320px}
-    h1{text-align:center;margin:0 0 12px}
-    label{display:block;font-size:14px;font-weight:600;margin:12px 0 4px}
-    select,input[type=text],input[type=file]{width:100%;padding:8px;border:1px solid #ccc;border-radius:6px}
-    button{width:100%;margin-top:16px;padding:10px;border:none;border-radius:6px;font-size:15px;background:#0057b8;color:#fff;cursor:pointer}
-    button:hover{background:#00449b}
-    #success{display:none;margin-top:12px;text-align:center;color:#279a00;font-weight:700}
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #f0f4ff, #e6f0ff);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    form {
+      background: #fff;
+      padding: 32px;
+      border-radius: 16px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 360px;
+      box-sizing: border-box;
+    }
+
+    h1 {
+      text-align: center;
+      color: #0057b8;
+      margin-bottom: 20px;
+      font-weight: 600;
+    }
+
+    label {
+      display: block;
+      margin: 12px 0 4px;
+      font-weight: 600;
+      color: #333;
+    }
+
+    select, input[type="text"], input[type="file"] {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      box-sizing: border-box;
+      font-size: 14px;
+    }
+
+    button {
+      width: 100%;
+      margin-top: 16px;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      background: #0057b8;
+      color: #fff;
+      font-size: 15px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    button:hover {
+      background: #00449b;
+    }
+
+    #success {
+      display: none;
+      margin-top: 16px;
+      text-align: center;
+      color: #279a00;
+      font-weight: 600;
+    }
   </style>
 </head>
+
 <body>
   <form id="f">
     <h1>Burak Travel</h1>
@@ -23,82 +87,88 @@
     <label for="location">Виберіть локацію</label>
     <select id="location" required>
       <option value=""> </option>
-      <option>Київ</option><option>Львів</option><option>Одеса</option>
+      <option>Київ</option>
+      <option>Львів</option>
+      <option>Одеса</option>
+      <!-- Додай свої локації тут -->
     </select>
 
     <label for="ttn">Номер ТТН (необов’язково)</label>
     <input id="ttn" type="text" placeholder="Автозаповнюється з фото" />
 
     <label for="photo">Завантажити фото ТТН</label>
-    <input id="photo" type="file" accept="image/*" required onchange="readTtn(this)">
+    <input id="photo" type="file" accept="image/*" required onchange="readTtn(this)" />
 
     <button type="submit">Відправити</button>
     <div id="success">✅ Дані надіслано!</div>
   </form>
 
   <script>
-  const GAS = 'https://script.google.com/macros/s/AKfycbzrtFTAXEOBgEJHHT2Ya9SajEmhVVPlblDhgIRQSBhcA5cDqWeQSHcWWxQK93hWhV2ChQ/exec'; // підстав свій!
+    const GAS = 'https://script.google.com/macros/s/AKfycbzrtFTAXEOBgEJHHT2Ya9SajEmhVVPlblDhgIRQSBhcA5cDqWeQSHcWWxQK93hWhV2ChQ/exec'; // Підстав свій URL
 
-  async function readTtn(input){
-    if (!input.files[0]) return;
+    async function readTtn(input) {
+      if (!input.files[0]) return;
 
-    const ttnField = document.getElementById('ttn');
-    ttnField.placeholder = '⏳ Читання...';
+      const ttnField = document.getElementById('ttn');
+      ttnField.placeholder = '⏳ Читання...';
 
-    const base64 = await new Promise(r=>{
-      const rdr = new FileReader();
-      rdr.onload = () => r(rdr.result);
-      rdr.readAsDataURL(input.files[0]);
-    });
-
-    const fd = new FormData();
-    fd.append('photo', base64);
-    fd.append('mode', 'ocr');
-
-    fetch(GAS, {method:'POST', body:fd})
-      .then(r=>r.ok?r.text():Promise.reject())
-      .then(ttn=>{
-        if (ttn.length >= 10) ttnField.value = ttn;
-        else {
-          ttnField.value = '';
-          alert('Не вдалося автоматично розпізнати номер. Введіть вручну.');
-        }
-        ttnField.placeholder = 'Автозаповнюється з фото';
-      })
-      .catch(()=>{
-        ttnField.placeholder = 'Автозаповнюється з фото';
-        alert('Помилка при зчитуванні фото.');
+      const base64 = await new Promise(r => {
+        const rdr = new FileReader();
+        rdr.onload = () => r(rdr.result);
+        rdr.readAsDataURL(input.files[0]);
       });
-  }
 
-  document.getElementById('f').addEventListener('submit', async (e)=>{
-    e.preventDefault();
+      const fd = new FormData();
+      fd.append('photo', base64);
+      fd.append('mode', 'ocr');
 
-    const loc = document.getElementById('location').value.trim();
-    const file= document.getElementById('photo').files[0];
-    const userTtn = document.getElementById('ttn').value.replace(/\D/g,'').slice(0,14);
+      fetch(GAS, { method: 'POST', body: fd })
+        .then(r => r.ok ? r.text() : Promise.reject())
+        .then(ttn => {
+          if (ttn.length >= 10) ttnField.value = ttn;
+          else {
+            ttnField.value = '';
+            alert('Не вдалося автоматично розпізнати номер. Введіть вручну.');
+          }
+          ttnField.placeholder = 'Автозаповнюється з фото';
+        })
+        .catch(() => {
+          ttnField.placeholder = 'Автозаповнюється з фото';
+          alert('Помилка при зчитуванні фото.');
+        });
+    }
 
-    if(!loc || !file){ alert('Оберіть локацію та фото'); return; }
+    document.getElementById('f').addEventListener('submit', async (e) => {
+      e.preventDefault();
 
-    const base64 = await new Promise(r=>{
-      const rdr = new FileReader();
-      rdr.onload = () => r(rdr.result);
-      rdr.readAsDataURL(file);
+      const loc = document.getElementById('location').value.trim();
+      const file = document.getElementById('photo').files[0];
+      const userTtn = document.getElementById('ttn').value.replace(/\D/g, '').slice(0, 14);
+
+      if (!loc || !file) {
+        alert('Оберіть локацію та фото');
+        return;
+      }
+
+      const base64 = await new Promise(r => {
+        const rdr = new FileReader();
+        rdr.onload = () => r(rdr.result);
+        rdr.readAsDataURL(file);
+      });
+
+      const fd = new FormData();
+      fd.append('location', loc);
+      fd.append('photo', base64);
+      fd.append('ttn', userTtn);
+
+      fetch(GAS, { method: 'POST', body: fd })
+        .then(r => r.ok ? r.text() : Promise.reject())
+        .then(() => {
+          document.getElementById('success').style.display = 'block';
+          e.target.reset();
+        })
+        .catch(() => alert('Помилка при відправці.'));
     });
-
-    const fd = new FormData();
-    fd.append('location', loc);
-    fd.append('photo', base64);
-    fd.append('ttn', userTtn);
-
-    fetch(GAS,{method:'POST', body:fd})
-      .then(r=>r.ok?r.text():Promise.reject())
-      .then(()=>{
-        document.getElementById('success').style.display='block';
-        e.target.reset();
-      })
-      .catch(()=> alert('Помилка при відправці.'));
-  });
   </script>
 </body>
 </html>
