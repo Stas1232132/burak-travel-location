@@ -1,10 +1,9 @@
-
 <!DOCTYPE html>
 <html lang="uk">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Burak Travel - Локації</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Burak Travel – Локації</title>
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -17,62 +16,26 @@
             margin: 0;
             padding: 20px;
         }
-
-        h1 {
-            margin-bottom: 20px;
-            color: #333;
-        }
-
+        h1 {margin-bottom: 20px;color:#333;}
         form {
-            background: #fff;
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            width: 100%;
-            max-width: 400px;
+            background:#fff;padding:20px;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,.1);
+            width:100%;max-width:400px;position:relative;
         }
-
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: bold;
-            color: #555;
-        }
-
-        select, input[type="text"], input[type="file"] {
-            width: 100%;
-            padding: 10px;
-            margin-bottom: 15px;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-        }
-
-        button {
-            width: 100%;
-            padding: 12px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 16px;
-            transition: background-color 0.3s;
-        }
-
-        button:hover {
-            background-color: #0056b3;
-        }
-
-        .success-message {
-            margin-top: 15px;
-            color: green;
-            font-weight: bold;
-            display: none;
-        }
+        label{display:block;margin-bottom:8px;font-weight:600;color:#555;}
+        select,input[type="text"],input[type="file"]{width:100%;padding:10px;margin-bottom:15px;border:1px solid #ccc;border-radius:8px;}
+        button{width:100%;padding:12px;background:#007bff;color:#fff;border:none;border-radius:8px;font-size:16px;cursor:pointer;transition:background .3s;}
+        button:hover{background:#0056b3;}
+        .success-message{margin-top:15px;color:green;font-weight:700;display:none;}
+        .loader{position:absolute;top:0;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.7);border-radius:12px;display:none;}
+        .loader span{background:#007bff;width:16px;height:16px;border-radius:50%;animation: pulse 1s infinite alternate;}
+        @keyframes pulse{from{transform:scale(.6);}to{transform:scale(1);}}
     </style>
+    <!-- Tesseract.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 </head>
 <body>
     <h1>Burak Travel</h1>
+
     <form id="locationForm">
         <label for="location">Виберіть локацію:</label>
         <select id="location" required>
@@ -81,51 +44,78 @@
             <option value="Львів">Львів</option>
             <option value="Одеса">Одеса</option>
             <option value="Чернівці">Чернівці</option>
+            <!-- … додай тут решту локацій … -->
         </select>
 
         <label for="ttn">Номер ТТН:</label>
-        <input type="text" id="ttn" required />
+        <input type="text" id="ttn" placeholder="Автозаповнення з фото …" required>
 
         <label for="photo">Завантажити фото ТТН:</label>
-        <input type="file" id="photo" accept="image/*" />
+        <input type="file" id="photo" accept="image/*">
 
         <button type="submit">Відправити</button>
-
-        <div class="success-message" id="successMessage">
-            ✅ Дякуємо, дані надіслано!
-        </div>
+        <div class="loader" id="ocrLoader"><span></span></div>
+        <div class="success-message" id="successMessage">✅ Дякуємо, дані надіслано!</div>
     </form>
 
     <script>
-        document.getElementById('locationForm').addEventListener('submit', function(e) {
-            e.preventDefault();
+    const loader = document.getElementById('ocrLoader');
+    const ttnInput = document.getElementById('ttn');
 
-            const location = document.getElementById('location').value;
-            const ttn = document.getElementById('ttn').value;
-            const photoFile = document.getElementById('photo').files[0];
+    // ===== OCR BLOCK =====
+    document.getElementById('photo').addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
 
-            const formData = new FormData();
-            formData.append('location', location);
-            formData.append('ttn', ttn);
-            formData.append('photo', photoFile);
+        loader.style.display = 'flex';
+        try {
+            const worker = await Tesseract.createWorker();
+            await worker.loadLanguage('eng+ukr');
+            await worker.initialize('eng+ukr');
+            const { data:{ text } } = await worker.recognize(file);
+            await worker.terminate();
 
-            fetch('https://script.google.com/macros/s/AKfycby10JrgK-psXym2KzvR2cfpn4MygrO6X_tvB5-dTh8h29jNqxL1inCpIlggHYDYtCJa9Q/exec', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => {
-                if (response.ok) {
-                    document.getElementById('successMessage').style.display = 'block';
-                    document.getElementById('locationForm').reset();
-                } else {
-                    alert('Помилка при відправці. Спробуйте ще раз.');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Помилка при відправці. Спробуйте ще раз.');
-            });
-        });
+            // шукаємо підрядок з 14‑значним номером (типовий формат НП)
+            const match = text.replace(/\s+/g,'').match(/\d{11,14}/);
+            if (match) {
+                ttnInput.value = match[0];
+            } else {
+                alert('Не вдалося автоматично розпізнати номер. Введіть вручну.');
+            }
+        } catch(err){
+            console.error(err);
+            alert('Сталася помилка під час розпізнавання. Введіть номер вручну.');
+        } finally {
+            loader.style.display = 'none';
+        }
+    });
+
+    // ===== SEND TO GOOGLE SHEETS =====
+    document.getElementById('locationForm').addEventListener('submit', function(e){
+        e.preventDefault();
+        const location = document.getElementById('location').value;
+        const ttn = ttnInput.value.trim();
+        const photoFile = document.getElementById('photo').files[0];
+
+        if(!location || !ttn){
+            alert('Заповніть усі обов\'язкові поля.');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('location', location);
+        formData.append('ttn', ttn);
+        formData.append('photo', photoFile);
+
+        fetch('https://script.google.com/macros/s/AKfycby10JrgK-psXym2KzvR2cfpn4MygrO6X_tvB5-dTh8h29jNqxL1inCpIlggHYDYtCJa9Q/exec', { method:'POST', body:formData })
+        .then(res=>{
+            if(res.ok){
+                document.getElementById('successMessage').style.display='block';
+                document.getElementById('locationForm').reset();
+            } else { throw new Error('response not ok'); }
+        })
+        .catch(()=>alert('Помилка при відправці. Спробуйте ще раз.'));
+    });
     </script>
 </body>
 </html>
