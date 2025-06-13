@@ -4,15 +4,16 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1.0" />
   <title>Burak Travel – локації</title>
+
   <style>
-    body{display:flex;justify-content:center;align-items:center;height:100vh;margin:0;font-family:sans-serif;background:#f6f8fb}
+    body{display:flex;justify-content:center;align-items:center;min-height:100vh;margin:0;font-family:sans-serif;background:#f6f8fb}
     form{background:#fff;padding:24px;border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,.08);width:320px}
-    h1{text-align:center;margin-top:0}
-    label{font-size:14px;font-weight:600;display:block;margin:12px 0 4px}
+    h1{text-align:center;margin:0 0 12px}
+    label{display:block;font-size:14px;font-weight:600;margin:12px 0 4px}
     select,input[type=text],input[type=file]{width:100%;padding:8px;border:1px solid #ccc;border-radius:6px}
-    button{width:100%;padding:10px;margin-top:16px;border:none;border-radius:6px;background:#0057b8;color:#fff;font-size:15px;cursor:pointer}
+    button{width:100%;margin-top:16px;padding:10px;border:none;border-radius:6px;font-size:15px;background:#0057b8;color:#fff;cursor:pointer}
     button:hover{background:#00449b}
-    #success{display:none;margin-top:12px;color:#279a00;font-weight:bold;text-align:center}
+    #success{display:none;margin-top:12px;text-align:center;color:#279a00;font-weight:700}
   </style>
 </head>
 <body>
@@ -23,7 +24,7 @@
     <select id="location" required>
       <option value=""> </option>
       <option>Київ</option><option>Львів</option><option>Одеса</option>
-      <!-- додай інші… -->
+      <!-- додай інші локації… -->
     </select>
 
     <label for="ttn">Номер ТТН (необов’язково)</label>
@@ -37,30 +38,39 @@
   </form>
 
   <script>
+  /* ← ВСТАВ СЮДИ URL ТВОГО Apps Script-розгортання */
   const GAS = 'https://script.google.com/macros/s/AKfycbx6ayFCYDsTwqSOwticl_gCycwqI1EnJumBTZ6vbFLP05Lc1zHCImi2aIVN4PRexRiVLA/exec';
 
-  document.getElementById('f').addEventListener('submit', e => {
+  document.getElementById('f').addEventListener('submit', async (e)=>{
     e.preventDefault();
 
-    const loc  = location.value.trim();
-    const file = photo.files[0];
-    const user = ttn.value.replace(/\D/g,'').slice(0,14);
+    const locSelect = document.getElementById('location');
+    const loc       = locSelect.value.trim();
+    const file      = document.getElementById('photo').files[0];
+    const userTtn   = document.getElementById('ttn').value.replace(/\D/g,'').slice(0,14);
 
     if(!loc || !file){ alert('Оберіть локацію та фото'); return; }
 
-    const rdr = new FileReader();
-    rdr.onload = () => {
-      const fd = new FormData();
-      fd.append('location', loc);
-      fd.append('photo', rdr.result);          // Base64
-      fd.append('ttn',   user);                // fallback
+    /* 1. Читаємо файл у Base64 */
+    const base64 = await new Promise(r=>{
+      const rdr = new FileReader();
+      rdr.onload = () => r(rdr.result);           // data:image/…;base64,AAA
+      rdr.readAsDataURL(file);
+    });
 
-      fetch(GAS,{method:'POST',body:fd})
-        .then(r=>r.ok?r.text():Promise.reject())
-        .then(()=>{ success.style.display='block'; e.target.reset(); })
-        .catch(()=>alert('Не вдалося автоматично розпізнати номер. Введіть вручну.'));
-    };
-    rdr.readAsDataURL(file);                   // ← конвертуємо у Base64
+    /* 2. Готуємо форму та шлемо в Apps Script */
+    const fd = new FormData();
+    fd.append('location', loc);
+    fd.append('photo',    base64);
+    fd.append('ttn',      userTtn);
+
+    fetch(GAS,{method:'POST', body:fd})
+      .then(r => r.ok ? r.text() : Promise.reject())
+      .then(()=>{
+        document.getElementById('success').style.display='block';
+        e.target.reset();
+      })
+      .catch(()=> alert('Не вдалося автоматично розпізнати номер. Введіть вручну.'));
   });
   </script>
 </body>
