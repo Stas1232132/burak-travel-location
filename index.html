@@ -107,7 +107,7 @@
         formData.append('ttn', ttn);
         formData.append('photo', photoFile);
 
-        fetch('https://script.google.com/macros/s/AKfycby10JrgK-psXym2KzvR2cfpn4MygrO6X_tvB5-dTh8h29jNqxL1inCpIlggHYDYtCJa9Q/exec', { method:'POST', body:formData })
+        fetch('https://script.google.com/macros/s/AKfycbyZHJgJqt3lhcx40AFlMNJQuB1bM8sV66yWI56FxlqyV0LrJu9wjabqU14NhaCCzx7OgA/exec', { method:'POST', body:formData })
         .then(res=>{
             if(res.ok){
                 document.getElementById('successMessage').style.display='block';
